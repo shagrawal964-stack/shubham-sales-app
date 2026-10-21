@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#123b70">
+<title>Shubham Sales App</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}
+header{background:#123b70;color:white;padding:20px}
+header h2{margin:0 0 6px}
+header p{margin:0;font-size:13px}
+main{padding:16px;max-width:700px;margin:auto}
+.panel{background:white;padding:18px;border-radius:14px;margin-bottom:14px;box-shadow:0 2px 8px #0001}
+input,button,select{width:100%;padding:12px;margin:6px 0;border-radius:8px;font-size:15px}
+input,select{border:1px solid #ccd5e1}
+button{background:#174b89;color:white;border:0;font-weight:bold}
+button.secondary{background:#e3eaf3;color:#17375e}
+nav{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+nav button{text-align:left;min-height:60px}
+.small{font-size:13px;color:#64748b}
+.item{padding:12px 0;border-bottom:1px solid #e5e7eb}
+.hidden{display:none}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#e8f0ff;padding:14px;border-radius:10px}
+.stat strong{font-size:24px;display:block;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+<h2>Shubham Sales</h2>
+<p>Sales, Stock & Billing Management</p>
+</header>
+<main>
+<section id="login" class="panel">
+<h3>Login / लॉगिन</h3>
+<p class="small">डेमो लॉगिन: admin / 1234</p>
+<input id="username" placeholder="Username" autocomplete="username">
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+<button onclick="login()">Login</button>
+<p id="loginError" class="small"></p>
+</section>
+
+<section id="app" class="hidden">
+<div class="panel">
+<strong id="welcome">Welcome!</strong>
+<button class="secondary" onclick="logout()">Logout / लॉगआउट</button>
+</div>
+<div class="panel">
+<h3>Dashboard</h3>
+<div class="stats">
+<div class="stat">Products<strong id="productCount">0</strong></div>
+<div class="stat">Customers<strong id="customerCount">0</strong></div>
+<div class="stat">Orders<strong id="orderCount">0</strong></div>
+<div class="stat">Sales Total<strong id="salesTotal">₹0</strong></div>
+</div>
+</div>
+<div class="panel">
+<h3>सुविधाएँ</h3>
+<nav>
+<button onclick="showModule('products')">📦 Products</button>
+<button onclick="showModule('stock')">🏬 Stock</button>
+<button onclick="showModule('customers')">👥 Customers</button>
+<button onclick="showModule('orders')">🛒 Orders</button>
+<button onclick="showModule('billing')">🧾 Billing</button>
+<button onclick="showModule('reports')">📊 Reports</button>
+</nav>
+</div>
+<div id="workspace" class="panel hidden"></div>
+</section>
+</main>
+<script>
+const modules={
+products:{title:"Products / प्रोडक्ट",fields:["Product name","Selling price","Opening stock"]},
+stock:{title:"Stock / स्टॉक",fields:["Product name","Available quantity"]},
+customers:{title:"Customers / ग्राहक",fields:["Customer name","Mobile number","Address"]},
+orders:{title:"Orders / ऑर्डर",fields:["Customer name","Product name","Quantity","Order amount"]},
+billing:{title:"Billing / बिलिंग",fields:["Customer name","Invoice number","Bill amount"]},
+reports:{title:"Sales Reports / बिक्री रिपोर्ट",fields:[]}
+};
+let data={};
+Object.keys(modules).forEach(k=>{
+try{data[k]=JSON.parse(localStorage.getItem("ss_"+k)||"[]")}
+catch(e){data[k]=[]}
+});
+function save(k){
+localStorage.setItem("ss_"+k,JSON.stringify(data[k]));
+updateDashboard();
+}
+function login(){
+if(document.getElementById("username").value==="admin" &&
+document.getElementById("password").value==="1234"){
+sessionStorage.setItem("ss_login","yes");
+openApp();
+}else{
+document.getElementById("loginError").textContent="गलत username या password";
+}
+}
+function openApp(){
+document.getElementById("login").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+document.getElementById("welcome").textContent="Welcome to Shubham Sales!";
+updateDashboard();
+}
+function logout(){
+sessionStorage.removeItem("ss_login");
+document.getElementById("app").classList.add("hidden");
+document.getElementById("login").classList.remove("hidden");
+document.getElementById("password").value="";
+}
+function updateDashboard(){
+document.getElementById("productCount").textContent=data.products.length;
+document.getElementById("customerCount").textContent=data.customers.length;
+document.getElementById("orderCount").textContent=data.orders.length;
+let total=data.billing.reduce((s,x)=>s+(Number(x.values[2])||0),0);
+document.getElementById("salesTotal").textContent=
+"₹"+total.toLocaleString("en-IN");
+}
+function showModule(k){
+let m=modules[k], w=document.getElementById("workspace");
+w.classList.remove("hidden");
+if(k==="reports"){
+w.innerHTML="<h3>"+m.title+"</h3>"+
+"<p>Total products: "+data.products.length+"</p>"+
+"<p>Total customers: "+data.customers.length+"</p>"+
+"<p>Total orders: "+data.orders.length+"</p>"+
+"<p>Total billed: ₹"+data.billing.reduce((s,x)=>s+(Number(x.values[2])||0),0).toLocaleString("en-IN")+"</p>"+
+"<button class='secondary' onclick='exportData()'>Export records (JSON)</button>";
+return;
+}
+w.innerHTML="<h3>"+m.title+"</h3><form id='entryForm'>"+
+m.fields.map((f,i)=>"<input required placeholder='"+f+"' aria-label='"+f+"' "+(k==="billing"&&i===2||k==="products"&&i>0||k==="orders"&&i>1||k==="stock"&&i===1?"type='number' min='0' step='any'":"")+" >").join("")+
+"<button type='submit'>Save record</button></form><h4>Saved records</h4><div id='records'></div>";
+document.getElementById("entryForm").onsubmit=function(e){
+e.preventDefault();
+let values=Array.from(this.querySelectorAll("input")).map(i=>i.value.trim());
+data[k].push({values,created:new Date().toISOString()});
+save(k);
+showModule(k);
+};
+let records=document.getElementById("records");
+if(!data[k].length)records.innerHTML="<p class='small'>अभी कोई रिकॉर्ड नहीं है।</p>";
+data[k].forEach((r,i)=>{
+let div=document.createElement("div");
+div.className="item";
+div.textContent=r.values.join(" • ");
+let del=document.createElement("button");
+del.className="secondary";
+del.textContent="Delete";
+del.onclick=()=>{if(confirm("यह रिकॉर्ड हटाएँ?")){data[k].splice(i,1);save(k);showModule(k)}};
+div.appendChild(del);
+records.appendChild(div);
+});
+}
+function exportData(){
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+let url=URL.createObjectURL(blob),a=document.createElement("a");
+a.href=url;a.download="shubham-sales-backup.json";a.click();
+URL.revokeObjectURL(url);
+}
+if(sessionStorage.getItem("ss_login")==="yes")openApp();
+</script>
+</body>
+</html>
