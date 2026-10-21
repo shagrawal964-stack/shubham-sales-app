@@ -7,21 +7,39 @@
 <title>Shubham Sales App</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#172033;font-family:Arial,sans-serif}
-header{background:#123b70;color:#fff;padding:18px}header h2{margin:0 0 5px}main{max-width:850px;margin:auto;padding:14px}
+header{background:#123b70;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20}header h2{margin:0 0 4px;font-size:21px}header .subtitle{font-size:12px;opacity:.85}main{max-width:850px;margin:auto;padding:14px}
+.menu-btn{width:46px;min-width:46px;margin:0;padding:10px;background:#ffffff20;font-size:22px}.drawer-shade{position:fixed;inset:0;background:#0008;z-index:30}.drawer{position:fixed;z-index:31;left:0;top:0;bottom:0;width:min(300px,85vw);background:#fff;padding:16px;overflow-y:auto;box-shadow:4px 0 20px #0003;transform:translateX(-105%);transition:transform .2s}.drawer.open{transform:translateX(0)}.drawer-head{background:#123b70;color:#fff;margin:-16px -16px 12px;padding:20px 16px}.drawer nav{display:flex;flex-direction:column;gap:5px}.drawer nav button{min-height:46px;text-align:left;margin:0;background:#f1f5f9;color:#17375e}.drawer nav button:active{background:#dbeafe}.drawer .logout{background:#a52c2c;color:white}
 .card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px #0001}
 h3{margin-top:4px}input,select,button,textarea{width:100%;padding:12px;margin:5px 0;border-radius:8px;font-size:15px}
 input,select,textarea{border:1px solid #cbd5e1;background:#fff;color:#172033}button{background:#174b89;color:#fff;border:0;font-weight:bold;cursor:pointer}
 .secondary{background:#e4ebf5;color:#17375e}.danger{background:#a52c2c}.hidden{display:none!important}
-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}nav button{min-height:55px;text-align:left}
+
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#e8f0ff;padding:12px;border-radius:10px;overflow-wrap:anywhere}
 .stat strong{display:block;font-size:21px;margin-top:8px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1;min-width:0}
 .item{padding:12px 0;border-bottom:1px solid #e2e8f0;overflow-wrap:anywhere}.small{font-size:12px;color:#64748b}
 .notice{padding:10px;background:#fff3cd;border-radius:8px;font-size:13px}
+
+.menu-bar{display:flex;align-items:center;gap:14px;background:#fff;padding:10px 12px;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px #0001;font-weight:bold}
+.menu-toggle{width:auto;margin:0;padding:10px 14px}
+.side-menu{position:fixed;z-index:1001;left:0;top:0;bottom:0;width:min(300px,85vw);background:#fff;box-shadow:4px 0 20px #0003;padding:14px;overflow-y:auto}
+.side-menu button{display:block;width:100%;text-align:left;margin:5px 0;padding:13px;background:#f1f5f9;color:#123b70}
+.menu-heading{display:flex;align-items:center;justify-content:space-between;font-weight:bold;font-size:17px;padding:8px 0 14px}
+.side-menu .close-menu{width:auto;background:#e2e8f0;padding:7px 10px;margin:0}
+.menu-shade{position:fixed;z-index:1000;inset:0;background:#0006}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-<header><h2>Shubham Sales</h2><div>Sales • Stock • Customers • Billing</div></header>
+<header><button class="menu-btn" id="menuButton" onclick="toggleMenu(true)" aria-label="Open menu">☰</button><div><h2>Shubham Sales</h2><div class="subtitle">Sales • Stock • Customers • Billing</div></div></header>
+<div id="drawerShade" class="drawer-shade hidden" onclick="toggleMenu(false)"></div>
+<aside id="sideDrawer" class="drawer" aria-label="Main menu"><div class="drawer-head"><b>Shubham Sales</b><div class="small" style="color:#fff;margin-top:5px">Main Menu</div></div><nav>
+<button onclick="goPage('home')">🏠 Dashboard</button>
+<button onclick="goPage('products')">📦 Products + Excel</button><button onclick="goPage('stock')">🏬 Stock In/Out</button>
+<button onclick="goPage('customers')">👥 Customers + Excel</button><button onclick="goPage('orders')">🛒 Orders</button>
+<button onclick="goPage('debtors')">📥 Debtors (Customers Due)</button><button onclick="goPage('creditors')">📤 Creditors (Supplier Due)</button>
+<button onclick="goPage('billing')">🧾 Billing / Direct Bill</button><button onclick="goPage('payments')">💳 Payments</button><button onclick="goPage('reports')">📊 Reports + Download</button>
+<button onclick="goPage('backup')">💾 Backup / Restore</button><button class="logout" onclick="logout()">↪ Logout</button>
+</nav></aside>
 <main>
 <section id="login" class="card">
 <h3>Admin Login</h3><p class="small">Demo login: admin / 1234</p>
@@ -37,29 +55,25 @@ nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}nav button{min-height:55p
 <div class="stat">Orders<strong id="oc">0</strong></div><div class="stat">Total Billed<strong id="sales">₹0</strong></div>
 <div class="stat">Stock Value<strong id="sv">₹0</strong></div><div class="stat">Customer Due<strong id="due">₹0</strong></div>
 </div></div>
-<div class="card"><h3>Business Management</h3><nav>
-<button onclick="page('products')">📦 Products + Excel</button><button onclick="page('stock')">🏬 Stock In/Out</button>
-<button onclick="page('customers')">👥 Customers</button><button onclick="page('orders')">🛒 Orders</button>
-<button onclick="page('billing')">🧾 Billing & Payments</button><button onclick="page('reports')">📊 Reports</button>
-<button onclick="page('backup')">💾 Backup / Restore</button>
-</nav></div>
 <div id="workspace" class="card hidden"></div>
 </section></main>
 <script>
-const blank=()=>({products:[],customers:[],orders:[],bills:[],moves:[]});
+const blank=()=>({products:[],customers:[],orders:[],bills:[],moves:[],suppliers:[]});
 let db;try{db=JSON.parse(localStorage.getItem("ss_erp_data"))||blank()}catch(e){db=blank()}
-["products","customers","orders","bills","moves"].forEach(k=>{if(!Array.isArray(db[k]))db[k]=[]});
+["products","customers","orders","bills","moves","suppliers"].forEach(k=>{if(!Array.isArray(db[k]))db[k]=[]});
 const money=n=>"₹"+(Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function save(){localStorage.setItem("ss_erp_data",JSON.stringify(db));dashboard()}
 function login(){if(document.getElementById("user").value==="admin"&&document.getElementById("pass").value==="1234"){sessionStorage.setItem("ss_erp_login","1");openApp()}else document.getElementById("err").textContent="Username या password गलत है"}
 function openApp(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");dashboard();page("home")}
+function toggleMenu(open){const d=document.getElementById("sideDrawer"),shade=document.getElementById("drawerShade");if(open){d.classList.add("open");shade.classList.remove("hidden")}else{d.classList.remove("open");shade.classList.add("hidden")}}
+function goPage(k){toggleMenu(false);page(k)}
 function logout(){sessionStorage.removeItem("ss_erp_login");document.getElementById("app").classList.add("hidden");document.getElementById("login").classList.remove("hidden");document.getElementById("pass").value=""}
 function dashboard(){document.getElementById("pc").textContent=db.products.length;document.getElementById("cc").textContent=db.customers.length;document.getElementById("oc").textContent=db.orders.length;document.getElementById("sales").textContent=money(db.bills.reduce((s,b)=>s+b.amount,0));document.getElementById("due").textContent=money(db.bills.reduce((s,b)=>s+b.amount-b.paid,0));document.getElementById("sv").textContent=money(db.products.reduce((s,p)=>s+p.stock*p.cost,0))}
 function opts(list,placeholder){return '<option value="">'+placeholder+'</option>'+list.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("")}
 function page(k){
 const w=document.getElementById("workspace");w.classList.remove("hidden");
-if(k==="home"){w.innerHTML="<h3>Welcome!</h3>ऊपर से कोई सुविधा चुनें।";return}
+if(k==="home"){w.innerHTML="<h3>Dashboard</h3><p>सभी सुविधाएँ ☰ Menu में उपलब्ध हैं।</p><div class='stats'><div class='stat'>Available Products<strong>"+db.products.length+"</strong></div><div class='stat'>Customers<strong>"+db.customers.length+"</strong></div><div class='stat'>Orders<strong>"+db.orders.length+"</strong></div><div class='stat'>Outstanding<strong>"+money(db.bills.reduce((s,b)=>s+b.amount-b.paid,0))+"</strong></div></div>";return}
 if(k==="products"){
 w.innerHTML=`<h3>Add Product</h3><form id="f">
 <input name="name" required placeholder="Product name"><input name="sku" placeholder="Product code / SKU">
@@ -80,7 +94,12 @@ document.getElementById("f").onsubmit=e=>{e.preventDefault();const f=new FormDat
 listProducts();document.getElementById("moves").innerHTML=db.moves.slice(0,30).map(m=>`<div class="item">${esc(m.name)} — ${m.type==="in"||m.type==="Opening stock"?"+":"−"}${m.qty}<div class="small">${esc(m.note||"")} ${new Date(m.date).toLocaleDateString()}</div></div>`).join("")||"No movements";return
 }
 if(k==="customers"){
-w.innerHTML=`<h3>Add Customer</h3><form id="f"><input name="name" required placeholder="Customer / Dealer name"><input name="phone" placeholder="Mobile number"><textarea name="address" placeholder="Address"></textarea><input name="opening" type="number" min="0" step=".01" value="0" placeholder="Old outstanding amount"><button>Save Customer</button></form><h3>Customer Accounts</h3><div id="list"></div>`;
+w.innerHTML=`<h3>Add Customer</h3><form id="f"><input name="name" required placeholder="Customer / Dealer name"><input name="phone" placeholder="Mobile number"><textarea name="address" placeholder="Address"></textarea><input name="opening" type="number" min="0" step=".01" value="0" placeholder="Opening amount receivable from customer"><button>Save Customer</button></form>
+<hr><h3>Customer Excel Import / Export</h3><button type="button" onclick="downloadCustomerTemplate()">Download Customer Excel Template</button>
+<input id="customerExcelFile" type="file" accept=".xlsx,.xls,.csv"><button type="button" onclick="importExcelCustomers()">Import Customers from Excel</button>
+<button type="button" class="secondary" onclick="exportCustomers()">Export Customers to Excel</button>
+<p class="small">Excel headings: Customer Name, Mobile, Address, Opening Receivable. Duplicate mobile numbers are skipped; if mobile is blank, duplicate names are skipped.</p>
+<h3>Customer Accounts</h3><div id="list"></div>`;
 document.getElementById("f").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);db.customers.push({id:crypto.randomUUID(),name:f.get("name").trim(),phone:f.get("phone").trim(),address:f.get("address").trim(),opening:+f.get("opening")||0});save();page(k)};listCustomers();return
 }
 if(k==="orders"){
@@ -88,53 +107,33 @@ w.innerHTML=`<h3>Create Order</h3><form id="f"><select name="customer" required>
 document.getElementById("f").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),p=db.products.find(x=>x.id===f.get("product")),c=db.customers.find(x=>x.id===f.get("customer")),q=+f.get("qty");if(!p||!c)return alert("Select customer and product");if(q>p.stock)return alert("Insufficient stock. Available: "+p.stock);p.stock-=q;db.orders.unshift({id:crypto.randomUUID(),customerId:c.id,customer:c.name,productId:p.id,product:p.name,qty:q,price:p.price,amount:q*p.price,note:f.get("note"),status:"Pending billing",date:new Date().toISOString()});db.moves.unshift({date:new Date().toISOString(),name:p.name,qty:q,type:"Order reserved"});save();page(k)};listOrders();return
 }
 if(k==="billing"){
-w.innerHTML=`<h3>Billing & Payment</h3><form id="f"><select name="order" required>${'<option value="">Select unbilled order</option>'+db.orders.filter(o=>!db.bills.some(b=>b.orderId===o.id)).map(o=>`<option value="${esc(o.id)}">${esc(o.customer)} — ${esc(o.product)} × ${o.qty} (${money(o.amount)})</option>`).join("")}</select>
-<input name="discount" type="number" min="0" step=".01" value="0" placeholder="Discount"><input name="paid" type="number" min="0" step=".01" value="0" placeholder="Amount received now">
-<select name="method"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Credit</option></select><button>Create Bill</button></form>
-<h3>Record Further Payment</h3><form id="pay"><select name="bill" required>${'<option value="">Select customer bill</option>'+db.bills.filter(b=>b.paid<b.amount).map(b=>`<option value="${esc(b.id)}">${esc(b.customer)} — Due ${money(b.amount-b.paid)}</option>`).join("")}</select><input name="amount" type="number" min=".01" step=".01" required placeholder="Payment amount"><button>Record Payment</button></form><h3>Bills</h3><div id="list"></div>`;
-document.getElementById("f").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),o=db.orders.find(x=>x.id===f.get("order"));if(!o)return alert("Select an order");const discount=+f.get("discount"),paid=+f.get("paid"),amount=o.amount-discount;if(discount>o.amount||paid>amount)return alert("Check discount and payment");db.bills.unshift({id:crypto.randomUUID(),orderId:o.id,customerId:o.customerId,customer:o.customer,amount,paid,method:f.get("method"),date:new Date().toISOString()});o.status="Billed";save();page(k)};
-document.getElementById("pay").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),b=db.bills.find(x=>x.id===f.get("bill")),a=+f.get("amount");if(!b||a<=0||a>b.amount-b.paid)return alert("Payment amount exceeds outstanding balance");b.paid+=a;b.payments=b.payments||[];b.payments.push({amount:a,date:new Date().toISOString()});save();page(k)};listBills();return
+w.innerHTML=`<h3>Create Bill (Order ke bina bhi)</h3><p class="small">Direct billing ke liye order banana zaroori nahi. Customer aur product select karke bill banayein.</p>
+<form id="f"><select name="customer" required>${opts(db.customers,"Select customer")}</select>
+<select name="source"><option value="direct">Direct Bill (No Order)</option><option value="order">Convert Existing Order to Bill</option></select>
+<div id="orderBox" class="hidden"><select name="order">${'<option value="">Select unbilled order</option>'+db.orders.filter(o=>!db.bills.some(b=>b.orderId===o.id)).map(o=>`<option value="${esc(o.id)}">${esc(o.customer)} — ${esc(o.product)} × ${o.qty} (${money(o.amount)})</option>`).join("")}</select></div>
+<div id="directBox"><select name="product">${opts(db.products,"Select product")}</select><div class="row"><input name="qty" type="number" min="1" step="1" value="1" placeholder="Quantity"><input name="rate" type="number" min="0" step=".01" placeholder="Rate"></div></div>
+<input name="discount" type="number" min="0" step=".01" value="0" placeholder="Discount"><input name="paid" type="number" min="0" step=".01" value="0" placeholder="Payment received now">
+<select name="method"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Credit</option></select><input name="note" placeholder="Bill note (optional)"><button>Create Bill</button></form>
+<h3>Bill Register</h3><div id="list"></div>`;
+const form=document.getElementById("f"),source=form.elements.source,orderBox=document.getElementById("orderBox"),directBox=document.getElementById("directBox");
+source.onchange=()=>{const direct=source.value==="direct";orderBox.classList.toggle("hidden",direct);directBox.classList.toggle("hidden",!direct);form.elements.order.required=!direct;form.elements.product.required=direct;form.elements.qty.required=direct;form.elements.rate.required=direct};source.onchange();
+form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),c=db.customers.find(x=>x.id===f.get("customer"));if(!c)return alert("Select customer");let items=[],orderId=null,subtotal=0;
+if(f.get("source")==="order") {const o=db.orders.find(x=>x.id===f.get("order"));if(!o)return alert("Select an unbilled order");if(o.customerId!==c.id)return alert("Order aur customer match nahi karte");items=[{productId:o.productId,product:o.product,qty:+o.qty,price:+o.price,total:+o.amount}];subtotal=+o.amount;orderId=o.id;}
+else {const p=db.products.find(x=>x.id===f.get("product")),qty=+f.get("qty"),rate=Number(f.get("rate"));if(!p)return alert("Select product");if(!Number.isInteger(qty)||qty<1||!Number.isFinite(rate)||rate<0)return alert("Quantity aur rate check karein");if(qty>p.stock)return alert("Insufficient stock. Available: "+p.stock);items=[{productId:p.id,product:p.name,qty,price:rate,total:qty*rate}];subtotal=qty*rate;}
+const discount=Number(f.get("discount"))||0,paid=Number(f.get("paid"))||0,amount=subtotal-discount;if(discount<0||discount>subtotal||paid<0||paid>amount)return alert("Discount/payment amount check karein");
+if(!orderId){const p=db.products.find(x=>x.id===items[0].productId);if(p){p.stock-=items[0].qty;db.moves.unshift({date:new Date().toISOString(),name:p.name,qty:items[0].qty,type:"Direct bill stock out",note:"Direct bill"})}}const bill={id:crypto.randomUUID(),billNo:"SS-"+Date.now().toString().slice(-8),orderId,customerId:c.id,customer:c.name,items,subtotal,discount,amount,paid,method:f.get("method"),note:f.get("note"),date:new Date().toISOString(),payments:paid?[{amount:paid,method:f.get("method"),note:f.get("note"),date:new Date().toISOString()}]:[]};db.bills.unshift(bill);if(orderId){const o=db.orders.find(x=>x.id===orderId);if(o)o.status="Billed"}save();page("billing");alert("Bill created successfully")};listBills();return
 }
-if(k==="reports"){
-w.innerHTML=`<h3>Business Reports</h3><div class="item">Total billed: <b>${money(db.bills.reduce((s,b)=>s+b.amount,0))}</b></div><div class="item">Payments received: <b>${money(db.bills.reduce((s,b)=>s+b.paid,0))}</b></div><div class="item">Outstanding on bills: <b>${money(db.bills.reduce((s,b)=>s+b.amount-b.paid,0))}</b></div><h3>Low Stock (5 or fewer)</h3>${db.products.filter(p=>p.stock<=5).map(p=>`<div class="item">${esc(p.name)}: ${p.stock} pcs</div>`).join("")||"No low-stock items"}<h3>Customer Outstanding</h3>${db.customers.map(c=>`<div class="item">${esc(c.name)}: <b>${money(customerDue(c.id))}</b></div>`).join("")||"No customers"}<h3>Stock Summary</h3>${db.products.map(p=>`<div class="item">${esc(p.name)} — ${p.stock} pcs</div>`).join("")||"No products"}`;return
+if(k==="payments"){
+w.innerHTML=`<h3>Payments (Separate Register)</h3><form id="pay"><select name="bill" required>${'<option value="">Select bill / customer</option>'+db.bills.filter(b=>b.paid<b.amount).map(b=>`<option value="${esc(b.id)}">${esc(b.billNo||b.id.slice(0,8))} — ${esc(b.customer)} — Due ${money(b.amount-b.paid)}</option>`).join("")}</select><input name="amount" type="number" min=".01" step=".01" required placeholder="Payment amount"><select name="method"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select><input name="note" placeholder="Payment reference / note"><button>Record Payment</button></form>
+<h3>Payment History</h3>${db.bills.flatMap(b=>(b.payments||[]).map(pay=>({bill:b,pay}))).sort((a,b)=>new Date(b.pay.date)-new Date(a.pay.date)).map(({bill,pay})=>`<div class="item"><b>${esc(bill.customer)}</b> — ${money(pay.amount)}<div class="small">Bill ${esc(bill.billNo||bill.id.slice(0,8))} • ${esc(pay.method||bill.method||"")} • ${new Date(pay.date).toLocaleString()}</div></div>`).join("")||"No payment records yet"}
+<h3>Outstanding Bills</h3><div id="list"></div><button onclick="downloadReport('payments')">Download Payments Report (Excel)</button>`;
+document.getElementById("pay").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),b=db.bills.find(x=>x.id===f.get("bill")),a=Number(f.get("amount"));if(!b||!Number.isFinite(a)||a<=0||a>b.amount-b.paid)return alert("Payment amount outstanding se zyada nahi hona chahiye");b.paid+=a;b.payments=b.payments||[];b.payments.push({amount:a,method:f.get("method"),note:f.get("note"),date:new Date().toISOString()});save();page("payments")};document.getElementById("list").innerHTML=db.bills.filter(b=>b.paid<b.amount).map(b=>`<div class="item"><b>${esc(b.customer)}</b><br>Bill ${esc(b.billNo||b.id.slice(0,8))} • Due: <b>${money(b.amount-b.paid)}</b></div>`).join("")||"No outstanding bills";return
 }
-if(k==="backup"){
-w.innerHTML=`<h3>Backup & Restore</h3><button id="export">Download Backup (JSON)</button><h3>Restore Backup</h3><input id="file" type="file" accept=".json,application/json"><button class="secondary" id="restore">Restore selected file</button><p class="small">Restore करने पर वर्तमान डेटा बदल जाएगा। पहले बैकअप लें।</p>`;
-document.getElementById("export").onclick=()=>{const a=document.createElement("a"),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.href=url;a.download="shubham-sales-backup.json";a.click();URL.revokeObjectURL(url)};
-document.getElementById("restore").onclick=()=>{const file=document.getElementById("file").files[0];if(!file)return alert("Choose a backup file");const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!["products","customers","orders","bills","moves"].every(k=>Array.isArray(d[k])))throw Error();if(!confirm("Replace current data with this backup?"))return;db=d;save();page("home");alert("Backup restored")}catch(e){alert("Invalid backup file")}};r.readAsText(file)}
+if(k==="debtors"){
+w.innerHTML=`<h3>Debtors — Customers Who Owe Us</h3><p class="small">Customer se vasool karni wali rakam. Opening Receivable + unpaid bills.</p>
+<div class="item">Total Debtors Outstanding: <b>${money(db.customers.reduce((s,c)=>s+customerDue(c.id),0))}</b></div>
+${db.customers.filter(c=>customerDue(c.id)>0).map(c=>`<div class="item"><b>${esc(c.name)}</b><br>Mobile: ${esc(c.phone||"-")}<br>Receivable: <b>${money(customerDue(c.id))}</b><br><span class="small">${esc(c.address||"")}</span></div>`).join("")||"No debtor balances"}<button onclick="downloadDebtorCreditorReport('debtors')">Download Debtors Report (Excel)</button>`;
+return
 }
-}
-function listProducts(){const el=document.getElementById("list");if(!el)return;el.innerHTML=db.products.map(p=>`<div class="item"><b>${esc(p.name)}</b> ${p.sku?"("+esc(p.sku)+")":""}<br>Stock: ${p.stock} | Purchase: ${money(p.cost)} | Sale: ${money(p.price)}<button class="secondary" onclick="editStock('${p.id}')">Quick stock change</button></div>`).join("")||"No products yet"}
-function editStock(id){const p=db.products.find(x=>x.id===id);if(!p)return;const value=prompt("Enter new total stock for "+p.name,p.stock);if(value===null)return;const q=Number(value);if(!Number.isInteger(q)||q<0)return alert("Enter a valid non-negative whole number");const diff=q-p.stock;p.stock=q;if(diff)db.moves.unshift({date:new Date().toISOString(),name:p.name,qty:Math.abs(diff),type:diff>0?"in":"out",note:"Quick adjustment"});save();page("stock")}
-function customerDue(id){const c=db.customers.find(x=>x.id===id);return (c?.opening||0)+db.bills.filter(b=>b.customerId===id).reduce((s,b)=>s+b.amount-b.paid,0)}
-function listCustomers(){const el=document.getElementById("list");if(!el)return;el.innerHTML=db.customers.map(c=>`<div class="item"><b>${esc(c.name)}</b><br>${esc(c.phone)}<br>${esc(c.address)}<br>Outstanding: <b>${money(customerDue(c.id))}</b></div>`).join("")||"No customers yet"}
-function listOrders(){const el=document.getElementById("list");if(!el)return;el.innerHTML=db.orders.map(o=>`<div class="item"><b>${esc(o.customer)}</b><br>${esc(o.product)} × ${o.qty}<br>${money(o.amount)} — ${esc(o.status)}<div class="small">${new Date(o.date).toLocaleString()}</div></div>`).join("")||"No orders yet"}
-function listBills(){const el=document.getElementById("list");if(!el)return;el.innerHTML=db.bills.map(b=>`<div class="item"><b>${esc(b.customer)}</b><br>Bill: ${money(b.amount)}<br>Paid: ${money(b.paid)}<br>Due: <b>${money(b.amount-b.paid)}</b><br>Method: ${esc(b.method)}<div class="small">${new Date(b.date).toLocaleDateString()}</div><button class="secondary" onclick="printBill('${b.id}')">Print Bill</button></div>`).join("")||"No bills yet"}
-function printBill(id){const b=db.bills.find(x=>x.id===id);if(!b)return;const o=db.orders.find(x=>x.id===b.orderId),c=db.customers.find(x=>x.id===b.customerId),win=window.open("","_blank");if(!win)return alert("Allow pop-ups to print bills");win.document.write(`<html><head><title>Shubham Sales Invoice</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #888;padding:10px;text-align:left}</style></head><body><h2>Shubham Sales</h2><h3>Invoice</h3><p>Date: ${new Date(b.date).toLocaleDateString()}</p><p>Customer: ${esc(b.customer)}</p><p>Mobile: ${esc(c?.phone||"")}</p><table><tr><th>Product</th><th>Qty</th><th>Rate</th><th>Total</th></tr><tr><td>${esc(o?.product||"")}</td><td>${o?.qty||0}</td><td>${money(o?.price)}</td><td>${money(o?.amount)}</td></tr></table><p>Discount: ${money((o?.amount||0)-b.amount)}</p><h3>Net Bill: ${money(b.amount)}</h3><p>Paid: ${money(b.paid)}</p><p>Balance: ${money(b.amount-b.paid)}</p><button onclick="window.print()">Print / Save PDF</button></body></html>`);win.document.close()}
-function downloadProductTemplate(){
-if(!window.XLSX){alert("Excel library load nahi hui. Internet check karein.");return}
-const rows=[{"Product Name":"Pillar Cock","Product Code":"BF001","Purchase Price":250,"Selling Price":350,"Opening Stock":100},{"Product Name":"Bib Cock","Product Code":"BF002","Purchase Price":180,"Selling Price":260,"Opening Stock":50}];
-const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Products");XLSX.writeFile(wb,"Shubham_Sales_Product_Template.xlsx")
-}
-async function importExcelProducts(){
-const input=document.getElementById("excelFile"),file=input&&input.files[0];if(!file)return alert("Pehle Excel ya CSV file select karein");if(!window.XLSX)return alert("Excel library load nahi hui. Internet check karein");
-try{
-const buffer=await file.arrayBuffer(),workbook=XLSX.read(buffer,{type:"array"}),sheet=workbook.Sheets[workbook.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:"",raw:false});
-if(!rows.length)return alert("Excel sheet khali hai");
-const normalize=v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,""),added=[];let skipped=0;
-for(const row of rows){
-const cells={};for(const [key,value] of Object.entries(row))cells[normalize(key)]=value;
-const get=(...keys)=>{for(const key of keys)if(cells[key]!==undefined&&cells[key]!=="")return String(cells[key]).trim();return ""};
-const name=get("productname","name","product"),sku=get("productcode","sku","code"),ct=get("purchaseprice","cost","buyprice"),pt=get("sellingprice","saleprice","price"),st=get("openingstock","stock","quantity","qty"),cost=Number(ct),price=Number(pt),stock=Number(st);
-if(!name||ct===""||!Number.isFinite(cost)||cost<0||pt===""||!Number.isFinite(price)||price<0||st===""||!Number.isInteger(stock)||stock<0){skipped++;continue}
-const duplicate=db.products.some(p=>sku?p.sku&&p.sku.toLowerCase()===sku.toLowerCase():p.name.toLowerCase()===name.toLowerCase());if(duplicate){skipped++;continue}
-added.push({id:crypto.randomUUID(),name,sku,cost,price,stock})
-}
-if(!added.length)return alert("Koi naya valid product nahi mila. Excel headings aur data check karein.");
-if(!confirm(added.length+" products add honge.\n"+skipped+" rows skip hongi.\nContinue karein?"))return;
-db.products.push(...added);for(const p of added)db.moves.unshift({date:new Date().toISOString(),name:p.name,qty:p.stock,type:"Opening stock",note:"Excel import"});
-save();page("products");alert(added.length+" products add hue. "+skipped+" rows skip hui.")
-}catch(e){alert("Excel file read nahi hui. Sahi .xlsx, .xls ya .csv file use karein.")}
-}
-if(sessionStorage.getItem("ss_erp_login")==="1")openApp();
-</script></body></html>
+if(k==="creditors"){
+w.innerHTML=`<h3>Creditors — Suppliers We Owe</h3><p class="small">Yeh supplier ledger hai. Supplier ko alag se add karein aur uska opening payable balance ente
