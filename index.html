@@ -26,6 +26,7 @@ input,select,textarea{border:1px solid #cbd5e1;background:#fff;color:#172033}but
 .menu-heading{display:flex;align-items:center;justify-content:space-between;font-weight:bold;font-size:17px;padding:8px 0 14px}
 .side-menu .close-menu{width:auto;background:#e2e8f0;padding:7px 10px;margin:0}
 .menu-shade{position:fixed;z-index:1000;inset:0;background:#0006}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;max-width:92vw;padding:13px 18px;border-radius:10px;color:#fff;font-weight:bold;box-shadow:0 5px 20px #0003;display:none;text-align:center}.toast.success{background:#15803d}.toast.error{background:#b91c1c}.login-modes{display:flex;gap:6px;margin:8px 0}.login-modes button{flex:1;padding:10px 4px;margin:0;font-size:13px}.login-modes button.active{background:#123b70;color:#fff}.login-hint{font-size:12px;color:#64748b;margin-top:8px}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -41,11 +42,14 @@ input,select,textarea{border:1px solid #cbd5e1;background:#fff;color:#172033}but
 <button onclick="goPage('backup')">💾 Backup / Restore</button><button class="logout" onclick="logout()">↪ Logout</button>
 </nav></aside>
 <main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <section id="login" class="card">
-<h3>Admin Login</h3><p class="small">Demo login: admin / 1234</p>
+<h3>Admin Login</h3><p class="small">Login करने का तरीका चुनें</p>
+<div class="login-modes"><button type="button" id="modeUser" class="active" onclick="setLoginMode('user')">Username</button><button type="button" id="modeMobile" onclick="setLoginMode('mobile')">Mobile No.</button><button type="button" id="modeEmail" onclick="setLoginMode('email')">Email</button></div>
 <input id="user" placeholder="Username" autocomplete="username">
 <input id="pass" type="password" placeholder="Password" autocomplete="current-password">
-<button onclick="login()">Login</button><p id="err" class="small"></p>
+<button type="button" onclick="login()">Login</button><p id="err" class="small" aria-live="polite"></p>
+<p class="login-hint">Demo access: admin, 9876543210 या admin@shubhamsales.com — Password: 1234</p>
 </section>
 <section id="app" class="hidden">
 <div class="card"><div class="row"><div><b>Shubham Sales Dashboard</b></div><button style="max-width:110px" onclick="logout()">Logout</button></div>
@@ -61,10 +65,14 @@ input,select,textarea{border:1px solid #cbd5e1;background:#fff;color:#172033}but
 const blank=()=>({products:[],customers:[],orders:[],bills:[],moves:[],suppliers:[]});
 let db;try{db=JSON.parse(localStorage.getItem("ss_erp_data"))||blank()}catch(e){db=blank()}
 ["products","customers","orders","bills","moves","suppliers"].forEach(k=>{if(!Array.isArray(db[k]))db[k]=[]});
+let invoiceTemplate=localStorage.getItem("ss_invoice_template")||"classic";
 const money=n=>"₹"+(Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function save(){localStorage.setItem("ss_erp_data",JSON.stringify(db));dashboard()}
-function login(){if(document.getElementById("user").value==="admin"&&document.getElementById("pass").value==="1234"){sessionStorage.setItem("ss_erp_login","1");openApp()}else document.getElementById("err").textContent="Username या password गलत है"}
+let loginMode="user",toastTimer;
+function notify(message,type="success"){const t=document.getElementById("toast");if(!t)return;t.textContent=message;t.className="toast "+type;t.style.display="block";clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.display="none"},3200)}
+function setLoginMode(mode){loginMode=mode;const u=document.getElementById("user");document.querySelectorAll(".login-modes button").forEach(b=>b.classList.remove("active"));document.getElementById(mode==="user"?"modeUser":mode==="mobile"?"modeMobile":"modeEmail").classList.add("active");u.value="";u.type=mode==="email"?"email":"text";u.inputMode=mode==="mobile"?"tel":"text";u.autocomplete=mode==="email"?"email":mode==="mobile"?"tel":"username";u.placeholder=mode==="user"?"Username":mode==="mobile"?"Mobile number":"Email address";document.getElementById("err").textContent=""}
+function login(){const identity=document.getElementById("user").value.trim(),password=document.getElementById("pass").value;const validIdentity=loginMode==="user"?identity==="admin":loginMode==="mobile"?identity.replace(/[\s()-]/g,"")==="9876543210":identity.toLowerCase()==="admin@shubhamsales.com";if(validIdentity&&password==="1234"){sessionStorage.setItem("ss_erp_login","1");document.getElementById("err").textContent="";notify("Login successful! Welcome to Shubham Sales.","success");setTimeout(openApp,350)}else{document.getElementById("err").textContent="Login failed. Username/Mobile/Email या Password गलत है।";notify("Password या login details गलत हैं।","error");document.getElementById("pass").value="";document.getElementById("pass").focus()}}
 function openApp(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");dashboard();page("home")}
 function toggleMenu(open){const d=document.getElementById("sideDrawer"),shade=document.getElementById("drawerShade");if(open){d.classList.add("open");shade.classList.remove("hidden")}else{d.classList.remove("open");shade.classList.add("hidden")}}
 function goPage(k){toggleMenu(false);page(k)}
@@ -108,6 +116,7 @@ document.getElementById("f").onsubmit=e=>{e.preventDefault();const f=new FormDat
 }
 if(k==="billing"){
 w.innerHTML=`<h3>Create Bill (Order ke bina bhi)</h3><p class="small">Direct billing ke liye order banana zaroori nahi. Customer aur product select karke bill banayein.</p>
+<label for="invoiceTemplate"><b>Invoice Template (एक बार चुनें; सेव रहेगा)</b></label><select id="invoiceTemplate" onchange="saveInvoiceTemplate(this.value)"><option value="classic" ${invoiceTemplate==="classic"?"selected":""}>Classic — Traditional</option><option value="modern" ${invoiceTemplate==="modern"?"selected":""}>Modern — Blue Header</option><option value="compact" ${invoiceTemplate==="compact"?"selected":""}>Compact — छोटा बिल</option></select><p class="small">चुना हुआ डिज़ाइन इसी ब्राउज़र में सेव होगा और प्रिंट किए जाने वाले सभी बिलों पर लागू होगा।</p>
 <form id="f"><select name="customer" required>${opts(db.customers,"Select customer")}</select>
 <select name="source"><option value="direct">Direct Bill (No Order)</option><option value="order">Convert Existing Order to Bill</option></select>
 <div id="orderBox" class="hidden"><select name="order">${'<option value="">Select unbilled order</option>'+db.orders.filter(o=>!db.bills.some(b=>b.orderId===o.id)).map(o=>`<option value="${esc(o.id)}">${esc(o.customer)} — ${esc(o.product)} × ${o.qty} (${money(o.amount)})</option>`).join("")}</select></div>
@@ -121,19 +130,4 @@ form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),c=db.customers.f
 if(f.get("source")==="order") {const o=db.orders.find(x=>x.id===f.get("order"));if(!o)return alert("Select an unbilled order");if(o.customerId!==c.id)return alert("Order aur customer match nahi karte");items=[{productId:o.productId,product:o.product,qty:+o.qty,price:+o.price,total:+o.amount}];subtotal=+o.amount;orderId=o.id;}
 else {const p=db.products.find(x=>x.id===f.get("product")),qty=+f.get("qty"),rate=Number(f.get("rate"));if(!p)return alert("Select product");if(!Number.isInteger(qty)||qty<1||!Number.isFinite(rate)||rate<0)return alert("Quantity aur rate check karein");if(qty>p.stock)return alert("Insufficient stock. Available: "+p.stock);items=[{productId:p.id,product:p.name,qty,price:rate,total:qty*rate}];subtotal=qty*rate;}
 const discount=Number(f.get("discount"))||0,paid=Number(f.get("paid"))||0,amount=subtotal-discount;if(discount<0||discount>subtotal||paid<0||paid>amount)return alert("Discount/payment amount check karein");
-if(!orderId){const p=db.products.find(x=>x.id===items[0].productId);if(p){p.stock-=items[0].qty;db.moves.unshift({date:new Date().toISOString(),name:p.name,qty:items[0].qty,type:"Direct bill stock out",note:"Direct bill"})}}const bill={id:crypto.randomUUID(),billNo:"SS-"+Date.now().toString().slice(-8),orderId,customerId:c.id,customer:c.name,items,subtotal,discount,amount,paid,method:f.get("method"),note:f.get("note"),date:new Date().toISOString(),payments:paid?[{amount:paid,method:f.get("method"),note:f.get("note"),date:new Date().toISOString()}]:[]};db.bills.unshift(bill);if(orderId){const o=db.orders.find(x=>x.id===orderId);if(o)o.status="Billed"}save();page("billing");alert("Bill created successfully")};listBills();return
-}
-if(k==="payments"){
-w.innerHTML=`<h3>Payments (Separate Register)</h3><form id="pay"><select name="bill" required>${'<option value="">Select bill / customer</option>'+db.bills.filter(b=>b.paid<b.amount).map(b=>`<option value="${esc(b.id)}">${esc(b.billNo||b.id.slice(0,8))} — ${esc(b.customer)} — Due ${money(b.amount-b.paid)}</option>`).join("")}</select><input name="amount" type="number" min=".01" step=".01" required placeholder="Payment amount"><select name="method"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select><input name="note" placeholder="Payment reference / note"><button>Record Payment</button></form>
-<h3>Payment History</h3>${db.bills.flatMap(b=>(b.payments||[]).map(pay=>({bill:b,pay}))).sort((a,b)=>new Date(b.pay.date)-new Date(a.pay.date)).map(({bill,pay})=>`<div class="item"><b>${esc(bill.customer)}</b> — ${money(pay.amount)}<div class="small">Bill ${esc(bill.billNo||bill.id.slice(0,8))} • ${esc(pay.method||bill.method||"")} • ${new Date(pay.date).toLocaleString()}</div></div>`).join("")||"No payment records yet"}
-<h3>Outstanding Bills</h3><div id="list"></div><button onclick="downloadReport('payments')">Download Payments Report (Excel)</button>`;
-document.getElementById("pay").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),b=db.bills.find(x=>x.id===f.get("bill")),a=Number(f.get("amount"));if(!b||!Number.isFinite(a)||a<=0||a>b.amount-b.paid)return alert("Payment amount outstanding se zyada nahi hona chahiye");b.paid+=a;b.payments=b.payments||[];b.payments.push({amount:a,method:f.get("method"),note:f.get("note"),date:new Date().toISOString()});save();page("payments")};document.getElementById("list").innerHTML=db.bills.filter(b=>b.paid<b.amount).map(b=>`<div class="item"><b>${esc(b.customer)}</b><br>Bill ${esc(b.billNo||b.id.slice(0,8))} • Due: <b>${money(b.amount-b.paid)}</b></div>`).join("")||"No outstanding bills";return
-}
-if(k==="debtors"){
-w.innerHTML=`<h3>Debtors — Customers Who Owe Us</h3><p class="small">Customer se vasool karni wali rakam. Opening Receivable + unpaid bills.</p>
-<div class="item">Total Debtors Outstanding: <b>${money(db.customers.reduce((s,c)=>s+customerDue(c.id),0))}</b></div>
-${db.customers.filter(c=>customerDue(c.id)>0).map(c=>`<div class="item"><b>${esc(c.name)}</b><br>Mobile: ${esc(c.phone||"-")}<br>Receivable: <b>${money(customerDue(c.id))}</b><br><span class="small">${esc(c.address||"")}</span></div>`).join("")||"No debtor balances"}<button onclick="downloadDebtorCreditorReport('debtors')">Download Debtors Report (Excel)</button>`;
-return
-}
-if(k==="creditors"){
-w.innerHTML=`<h3>Creditors — Suppliers We Owe</h3><p class="small">Yeh supplier ledger hai. Supplier ko alag se add karein aur uska opening payable balance ente
+if(!orderId){const p=db.products.find(x=>x.id===items[0].productId);if(p){p.stock-=items[0].qty;db.moves.unshift({date:new Date().toISOString(),name:p.name,qty:items[0].qty,type:"Direct bill stock out",note:"Direct bill"})}}const bill={id:crypto.randomUUID(),billNo:"SS-"+Date.now().toString().slice(-8),orderId,customerId:c.id,customer:c.name,items,subtotal,discount,amount,paid,method:f.get("method"),note:f.get("note"),date:new Date().toISOString(),payments:paid?[{amount:pai
