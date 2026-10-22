@@ -139,6 +139,18 @@ jobs:
       - name: Build APK
         run: gradle assembleDebug
 
+      - name: Verify APK and app files
+        shell: bash
+        run: |
+          echo "=== HTML file size ==="
+          wc -c app/src/main/assets/index.html
+          echo "=== APK file size ==="
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          echo "=== APK contents ==="
+          unzip -l app/build/outputs/apk/debug/app-debug.apk
+          echo "=== Check HTML inside APK ==="
+          unzip -p app/build/outputs/apk/debug/app-debug.apk assets/index.html | wc -c
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
